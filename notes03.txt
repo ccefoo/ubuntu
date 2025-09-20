@@ -49,4 +49,6 @@ nohup 命令通过忽略“挂断信号”（SIGHUP）来实现它的功能。�
 如何使用 nohup
 nohup your_command &
 
+13. 如何上网？
+基础是clash，配置要精简，同一网络下proxy,双网卡或移动卡加无线卡自己开热点。
 
