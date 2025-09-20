@@ -1,0 +1,69 @@
+这几天折腾ubuntu server 24.04.3 LTS，记下几条笔记
+
+1. 第一件事是联网，在安装时最好就设置无线网络，否则要手动增加。
+第1步，在/etc/netplan/下创建一个 wifi.yaml, 使用 sudo nano /etc/netplan/wifi.yaml
+内容如下：
+network:
+  version: 2
+  renderer: networkd #也可能是NetworkManager，区分大小写
+  wifis:
+    wlan-device-name:#网卡名，需修改。如何查看呢？
+      dhcp4: true
+      access-points:
+        "SSID1":
+          password: "password"
+        "SSID2":
+          password: "password"
+注意：yaml文件对缩进要求高，不能错，下一层级多2个空格，可以复制50-cloud-init.yaml修改。
+
+小提示：如何查看网卡设备名称呢？ip a
+lo忽略 wwan0 移动上网卡 ，剩下的自己找
+如果已经安装network-manager（后话），可以用nmcli device
+
+编辑完之后 Ctrl+S, 如果想另存为其他文件，点Ctrl + O
+退出 Ctrl + X
+nano比vi好用太多了！（vi 需要 :i插入 Esc, 然后 :w 保存 :q 退出
+
+第2步，变更属性，应用
+sudo chmod 600 /etc/netplan/wifi.yaml #如果权限too open无法生效
+sudo netplan generate
+sudo netplan apply
+如果正常，再用ip a查看，无线网卡inet 后有IP的话，就可用了。
+当然也可以ping
+
+2. 第二件事，安装network-manager，因为功能强大很多。
+（1）离线安装，把相关debs放在一个目录，然后 dpkg -i *.deb ，再 apt install -f 修正依赖性
+比较麻烦，需要先挂U盘, 默认是/dev/sda1, 不放心可以 sudo fdisk -l 确认
+sudo mkdir -p /mnt/usb
+sudo mount /dev/sda1 /mnt/usb
+cd /mnt/usb 然后操作
+退出事 sudo umount /mnt/usb 不能直接拔
+安装完之后，就有了一个强大的命令行工具 nmcli, 查看设备 nmcli device 查看连接 nmcli connection
+
+重要提示：
+/etc/netplan/wifi.yaml里的 renderer需要从networkd修改为NetworkManager，这样它才能控制设备。
+也可复制一份wifi.yaml,原来的不动，在新的yaml里修改。两者可以同存！
+
+sudo chmod 600 /etc/netplan/wifi.yaml
+sudo netplan generate
+sudo netplan apply
+
+（2）联网安装 sudo apt install network-manager 
+安装完之后再完成（1）里面的修改配置文件的动作。
+
+（3）停用服务，否则开机等待太久
+sudo systemctl disable systemd-networkd-wait-online.service
+sudo systemctl disable NetworkManager-wait-online.service
+
+3. 修改终端字体
+（1）方式1 sudo dpkg-reconfigure console-setup, 
+(2) 方式2 
+sudo sed -i 's/^FONTFACE=.*/FONTFACE="TerminusBold"/' /etc/default/console-setup
+sudo sed -i 's/^FONTSIZE=.*/FONTSIZE="16x32"/' /etc/default/console-setup
+sudo setupcon
+logout (可选）
+
+
+
+
+
