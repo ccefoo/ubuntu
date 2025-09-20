@@ -1,0 +1,23 @@
+9.安装配置samba服务器
+（1）安装
+sudo apt update
+sudo apt install samba
+（2）配置
+sudo nano /etc/samba/smb.conf, 增加以下内容
+[share]
+    comment = User Home Share
+    path = $SUDO_USER_HOME/share
+    browseable = yes
+    read only = no
+    create mask = 0700
+    directory mask = 0700
+    valid users = $CURRENT_USER
+
+（3）创建目录，增加用户
+mkdir ~/share
+chmod 755 -R ~/share
+sudo smbpasswd -a 'username'
+
+(4)重启服务
+sudo systemctl restart smbd
+sudo systemctl restart nmbd
