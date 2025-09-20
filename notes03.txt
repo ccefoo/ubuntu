@@ -21,3 +21,32 @@ sudo smbpasswd -a 'username'
 (4)重启服务
 sudo systemctl restart smbd
 sudo systemctl restart nmbd
+
+
+10. 安装 dnsmasq （大坑！）
+使用 nmcli 来创建热点，而 nmcli 是 NetworkManager 的命令行工具，但当 NetworkManager 创建一个共享连接（ipv4.method=shared，也就是热点模式）时，它会自动启动一个内置的 dnsmasq 实例来提供 DHCP 和 DNS 服务给连接到热点的客户端设备。如果你的系统里没有安装 dnsmasq 软件包，NetworkManager 就会因为找不到可执行文件而启动失败，导致热点无法正常工作。
+
+为什么需要 dnsmasq？
+当你创建一个热点时，有两项基本服务是必须的：
+DHCP (Dynamic Host Configuration Protocol): 这个服务负责给连接到你热点的设备（如手机、平板）自动分配一个 IP 地址。
+DNS (Domain Name System): 这个服务负责将域名（如 www.google.com）解析成 IP 地址。
+dnsmasq 就是一个轻量级的工具，可以同时提供这两种服务。
+
+sudo apt install dnsmasq
+
+11. 配置clash
+如何获取clash，我也不知道。
+./clash -f config.yaml -d .
+-f 指定配置文件。-d 指定运行目录
+
+12. 关于nohup
+nohup 是一个 Linux 命令，它的名字是 “no hang up” 的缩写，意思是**“不挂断”**。这个命令的主要作用是让一个进程在用户退出登录后仍然继续运行。
+当你通过 SSH 登录到一台远程服务器，并执行一个需要长时间运行的命令或脚本时，如果你的 SSH 会话意外断开（例如网络问题），或者你主动退出登录，这个命令通常就会被终止。nohup 就是为了解决这个问题而设计的。
+
+nohup 的工作原理
+nohup 命令通过忽略“挂断信号”（SIGHUP）来实现它的功能。当你的 SSH 会话断开时，系统会向会话中的所有进程发送 SIGHUP 信号，通知它们会话已结束。通常情况下，进程接收到这个信号后就会退出。而 nohup 会让它后面的命令忽略这个信号，从而使这个命令在后台不受影响地继续运行。
+
+如何使用 nohup
+nohup your_command &
+
+
