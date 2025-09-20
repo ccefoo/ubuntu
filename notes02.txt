@@ -1,0 +1,41 @@
+
+4. 修改启动欢迎页面
+Ubuntu Server 登录后显示的信息叫 “MOTD”（Message of the Day），它可以在登录 shell（tty 或 SSH）时显示系统状态、提醒或自定义信息。Ubuntu 的 MOTD 系统非常灵活，可以选择显示哪些内容。
+ls -l /etc/update-motd.d/
+00-header        # 系统欢迎信息
+10-help-text     # 基本帮助信息
+50-motd-news     # Ubuntu 新闻
+90-updates-available # 可用更新
+91-release-upgrade # 系统升级提醒
+95-hwe-eol       # 硬件支持生命周期信息
+98-fsck-at-reboot # 文件系统检查提醒
+99-footer        # 底部版权信息
+
+如果禁用 chmod -x 启用 chmod +x
+
+在这个目录可以自己定义
+sudo nano /etc/update-motd.d/10-myinfo
+内容示例：
+#!/bin/sh
+echo "欢迎登录服务器! Welcome to my Ubuntu Server!"
+赋予可执行权限：
+sudo chmod +x /etc/update-motd.d/10-myinfo
+登录时会显示自定义内容
+
+5. 安装tmux (这个几乎必须的）
+sudo apt update
+sudo apt install tmux
+基本用法:
+启动: 在终端中输入 tmux 即可进入一个新的 Tmux 会话。
+创建新窗口: 按下 Ctrl + b 然后松开，再按下 c。c：代表“create”（创建）。
+Ctrl + b：这是前缀键，用于告诉 tmux 你要执行一个命令。
+完成这个操作后，你就会看到一个全新的终端窗口，并且状态栏上的窗口编号会增加（从0开始，1指第2个窗口）。
+
+切换窗口: 按下 Ctrl + b 然后 n (下一个窗口) 或 p (上一个窗口)。
+关闭窗口: 在窗口中输入 exit 或使用 Ctrl + d
+分离会话: 按下 Ctrl + b 然后 d (dettach)。这会将你从 Tmux 会话中分离出来，但所有窗口和程序仍然在后台运行。
+重新连接会话: 输入 tmux attach 或 tmux a。
+
+
+
+
