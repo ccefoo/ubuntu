@@ -51,4 +51,5 @@ nohup your_command &
 
 13. 如何上网？
 基础是clash，配置要精简，同一网络下proxy,双网卡或移动卡加无线卡自己开热点。
+还一种方式，在同一个局域网内，allow_lan = true
 
