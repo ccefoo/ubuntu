@@ -1,0 +1,23 @@
+[Unit]
+Description=Clash Proxy Service with Delay
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+User=YOUR_USERNAME
+ExecStartPre=/bin/sleep 10
+ExecStart=/bin/bash /home/YOUR_USERNAME/proxy.sh on
+ExecStop=/bin/bash /home/YOUR_USERNAME/proxy.sh off
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+
+#延迟版 /etc/systemd/system/proxy.service
+#重新加载 systemd 配置
+#sudo systemctl daemon-reload
+# 启动一次试试
+#sudo systemctl start proxy.service
+# 开机自启
+#sudo systemctl enable proxy.service
