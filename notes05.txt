@@ -14,7 +14,29 @@ ssh username@your_server_ip, 可以免登录连接了。
 例如 
 scp ./file.txt ubuntu@123.45.67.89:~/
 
+如何使用scp复制文件夹？
+从本地复制到远程服务器：
+scp -r /path/to/local/directory username@remote_host:/path/to/remote/directory
 
+从远程服务器复制到本地：
+scp -r username@remote_host:/path/to/remote/directory /path/to/local/directory
 
+命令解析:
+-r： 这是实现文件夹复制的关键。它告诉scp以递归方式复制目录。
+/path/to/local/directory：您要复制的本地文件夹的路径。
+username：您在远程服务器上的用户名。
+remote_host：远程服务器的地址（可以是IP地址或域名）。
+:/path/to/remote/directory：您希望将文件夹复制到远程服务器上的目标路径。
 
+实用示例
+示例1：将本地的 project 文件夹上传到远程服务器的 /var/www 目录下
+scp -r ~/Documents/project user@192.168.1.100:/var/www
 
+示例2：将远程服务器上的 /home/user/backup 文件夹下载到本地的当前目录下
+scp -r user@your_domain.com:/home/user/backup .
+这里的 . 表示当前本地目录。
+
+其他常用选项
+-P port：如果远程服务器的SSH端口不是默认的22，您需要使用此选项指定端口号。
+-C：启用压缩功能，可以在传输大文件时加快速度。
+-p：保留文件的修改时间、访问时间和权限。
