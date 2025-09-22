@@ -1,0 +1,20 @@
+SSH和SCP
+
+第1步 生成公钥
+ssh-keygen -t rsa -b 4096
+直接按回车键两次，设置一个空的密码短语
+
+第2步 将您的公-钥复制到Ubuntu服务器
+ssh-copy-id username@your_server_ip
+
+第3步 验证
+ssh username@your_server_ip, 可以免登录连接了。
+
+第4步 SCP
+例如 
+scp ./file.txt ubuntu@123.45.67.89:~/
+
+
+
+
+
