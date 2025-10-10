@@ -1,0 +1,185 @@
+双启动中的shim signature fail 错误问题
+
+您好。这个问题非常具体，shim signature fail 错误几乎可以 100% 确定是由于您电脑的 UEFI 安全启动 (Secure Boot) 功能被开启所导致的。
+
+问题解释：为什么会发生这个错误？
+
+简单来说，安全启动（Secure Boot）是您电脑固件（BIOS/UEFI）的一项安全功能。它要求所有在启动过程中加载的软件（如引导加载程序GRUB、操作系统内核）都必须经过受信任的数字签名认证，以防止恶意软件在开机时运行。
+
+Ubuntu 有自己的、受微软（UEFI固件的信任源头）交叉签名的启动文件(shimx64.efi -> grubx64.efi)。
+
+Debian 也有自己的一套、同样受信任的启动文件。
+
+问题出在多重引导上：当您安装Debian后，它的GRUB成为了主引导程序。当您在Debian的GRUB菜单中选择“Ubuntu”时，Debian的引导环境（由Debian的shim启动）会尝试加载并验证Ubuntu的内核。此时，它发现Ubuntu的内核签名不被它（或它上层的shim）直接信任，于是安全检查失败，启动被中止。
+
+您可以把它想象成两个不同公司的安保系统：Debian的保安（它的shim和GRUB）不认可Ubuntu员工的工作证（它的内核签名），于是拒绝放行。
+
+解决方案
+
+您有以下几种解决方案，我将从最简单、最推荐的开始介绍。
+
+方案一：禁用安全启动 (最简单、最推荐的方法)
+
+这是解决此类多重引导问题的最常用、最一劳永逸的方法。对于个人桌面用户来说，禁用安全启动带来的安全风险极低，但便利性提升巨大。
+
+重启您的电脑。
+
+在开机时（出现电脑品牌Logo时），立刻连续按特定键进入电脑的 BIOS/UEFI 设置界面。
+
+这个按键通常是 F2, F10, F12, Del 或 Esc 之一，具体取决于您的电脑品牌（例如Dell通常是F2，HP是F10或Esc）。
+
+进入设置界面后，使用键盘方向键导航。找到通常名为 Security (安全) 或 Boot (启动) 的选项卡。
+
+在其中寻找名为 Secure Boot 的选项。
+
+将 Secure Boot 的状态从 Enabled (开启) 更改为 Disabled (禁用)。
+
+导航到 Exit (退出) 选项卡，选择 Save Changes and Exit (保存更改并退出)，然后按回车。
+
+电脑重启后，安全启动功能就被关闭了。现在您再进入GRUB菜单，无论选择Debian还是Ubuntu，都应该能顺利引导进入系统。
+
+方案二：尝试修复GRUB引导配置 (可以先尝试的温和方法)
+
+在禁用安全启动之前，您可以先尝试让当前主导的GRUB（Debian的）重新扫描并正确配置所有系统的引导项。这有时能解决问题。
+
+启动进入Debian系统（因为它是最后安装的，它的GRUB现在是主导）。
+
+打开终端，运行以下命令：
+
+Bash
+# 这个命令会重新扫描所有硬盘，寻找包括Windows和Ubuntu在内的其他操作系统，并更新GRUB菜单
+sudo update-grub
+为了确保万无一失，可以再运行一次GRUB安装命令，将引导信息重新写入硬盘：
+
+Bash
+# 假设您的Linux安装在/dev/nvme1n1上
+sudo grub-install /dev/nvme1n1
+重启电脑，然后再次尝试从GRUB菜单引导Ubuntu。
+
+如果这个方法无效，那么几乎可以肯定问题就在于Secure Boot的签名验证机制，请返回方案一。
+
+方案三：手动注册启动密钥 (最复杂，不推荐)
+
+这是一个非常高级的方法，需要您手动将Ubuntu的签名密钥（.der文件）导入到Debian的MOK (Machine Owner Key)管理器中，反之亦然。这个过程非常复杂，容易出错，且对于大多数用户来说完全没有必要。
+
+我强烈建议您优先采用方案一（禁用安全启动），这是社区公认的解决Linux多系统引导问题的最佳实践。
+
+
+好的，我们来深入探讨一下这个最复杂的方案：手动注册启动密钥 (Enrolling MOK - Machine Owner Keys)。
+
+核心概念：为什么要这样做？
+
+首先，请理解我们的目标。如前所述，Debian的引导保安(shim)不认识Ubuntu的身份证(签名密钥)，所以拒绝让Ubuntu的内核启动。
+
+手动注册密钥，就是我们作为电脑的主人(Machine Owner)，亲自告诉Debian的保安：“我担保这个人(Ubuntu的密钥)是可信的，请把它加到你的白名单(MOK列表)里。”
+
+这个过程分为两步：
+
+在Linux系统里“提交申请”：我们使用一个叫 mokutil 的命令行工具，来提交一个“添加新密钥”的请求。
+
+在开机时“审批申请”：重启电脑后，shim 会暂停启动，并显示一个蓝色的、独立于操作系统的界面（名为 MokManager），让我们最终确认并完成审批。
+
+警告与前提条件
+
+这是高级操作：此过程比禁用安全启动复杂得多，且有微小可能因操作失误导致系统无法启动。请严格按照步骤操作。
+
+禁用安全启动是更简单的替代方案：对于绝大多数用户，我依然首先推荐禁用安全启动。
+
+前提：您的电脑必须开启了安全启动(Secure Boot)，否则这个操作毫无意义。您也必须拥有管理员(sudo)权限。
+
+具体操作步骤
+
+我们将以您当前的场景为例：从Debian的GRUB菜单启动，但无法进入Ubuntu。我们的目标是，在Debian里，将Ubuntu的签名密钥注册进MOK列表。
+
+第1步：启动进入“主控”系统 (Debian)
+
+首先，正常启动并登录到您可以进入的、并且其GRUB正在控制引导的系统，也就是Debian。
+
+第2步：找到Ubuntu的签名密钥文件
+
+我们需要找到Ubuntu的“身份证”，它是一个以 .der 结尾的证书文件。这个文件位于Ubuntu自己的文件系统里。
+
+挂载Ubuntu的根分区：
+我们需要临时访问Ubuntu的文件系统。首先创建一个挂载点，然后挂载分区。
+
+Bash
+# 创建一个临时挂载目录
+sudo mkdir -p /mnt/ubuntu
+
+# 挂载Ubuntu的根分区 (...p2) 到这个目录
+# 请再次用 lsblk 确认Ubuntu的分区号，这里假设是 /dev/nvme1n1p2
+sudo mount /dev/nvme1n1p2 /mnt/ubuntu
+查找密钥文件：
+Ubuntu的shim签名密钥通常存放在固定的位置。我们可以直接去寻找它。
+
+Bash
+# 使用find命令在挂载的Ubuntu分区中寻找.der格式的密钥文件
+find /mnt/ubuntu/usr/share -name "*.der"
+find /mnt/ubuntu/var/lib/shim-signed -name "*.der"
+您可能会看到多个文件。通常，您需要的密钥位于 /var/lib/shim-signed/mok/ 目录下，或者文件名中包含 canonical、ubuntu 等字样。一个常见的文件是 mok/MOK.der。
+
+复制密钥文件：
+将找到的密钥文件复制到您Debian系统的主目录(~)下，方便后续操作。
+
+Bash
+# 假设您在 /mnt/ubuntu/var/lib/shim-signed/mok/ 中找到了 MOK.der
+cp /mnt/ubuntu/var/lib/shim-signed/mok/MOK.der ~/ubuntu_key.der
+卸载Ubuntu分区：
+操作完成后，及时卸载分区。
+
+Bash
+sudo umount /mnt/ubuntu
+第3步：使用 mokutil 提交注册申请
+
+现在，我们要在Debian中提交“将ubuntu_key.der加入白名单”的申请。
+
+运行导入命令：
+
+Bash
+sudo mokutil --import ~/ubuntu_key.der
+设置一次性密码：
+此时，终端会提示您 input password:。您需要设置一个临时密码。
+
+这个密码只在下一次重启时使用一次。
+
+长度建议在8-16位之间。
+
+请务必记住这个密码，下一步马上就要用到！
+
+输入密码后，会要求您再次输入以确认。
+
+第44步：重启并进入 MokManager 审批流程
+
+这是最关键的一步，需要您在电脑前操作。
+
+重启电脑：
+
+Bash
+sudo reboot
+进入MokManager：
+电脑重启后，在GRUB菜单出现之前，您会看到一个蓝色的背景和一个标题为 "Perform MOK management" 的界面。屏幕上可能会提示 Press any key to perform MOK management。
+
+您必须在几秒钟内按下任意键，否则它会自动跳过，您就需要再次重启。
+
+在MokManager中操作：
+您会进入一个简单的蓝色菜单。使用键盘方向键和回车键操作。
+
+选择 Enroll MOK (注册MOK)。
+
+下一个界面会问您是否确认，选择 Continue (继续)。
+
+它会显示出您刚才申请注册的密钥信息，并问您 Enroll the key(s)?，选择 Yes (是)。
+
+关键一步：系统会要求您输入密码 Enter password。请输入您在第3步中设置的那个一次性密码。
+
+密码正确后，系统会提示成功。
+
+完成并重启：
+
+在主菜单中选择 Reboot (重启)。
+
+第5步：验证结果
+
+电脑再次重启后，会正常进入Debian的GRUB菜单。此时，您再选择Ubuntu，由于它的密钥已经被您的电脑（通过MokManager）正式接纳为“可信”，安全启动检查将会顺利通过，Ubuntu系统现在应该可以正常启动了。
+
+至此，您就在没有禁用安全启动的情况下，解决了多系统引导的签名验证问题
